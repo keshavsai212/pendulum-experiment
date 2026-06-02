@@ -1,0 +1,273 @@
+:root {
+  color-scheme: light;
+  --ink: #16201c;
+  --muted: #5c6862;
+  --line: #d9dfda;
+  --paper: #f7f8f4;
+  --green: #1d6b52;
+  --shadow: 0 18px 45px rgba(23, 35, 30, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(120deg, rgba(43, 111, 159, 0.08), transparent 35%),
+    linear-gradient(240deg, rgba(212, 151, 47, 0.12), transparent 42%),
+    var(--paper);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 18px;
+  min-height: calc(100vh - 48px);
+}
+
+.sim-panel,
+.side-panel section,
+.learning-band article {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.sim-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+  overflow: hidden;
+}
+
+.sim-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 14px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(2rem, 4vw, 4.5rem);
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+h2 {
+  margin-bottom: 14px;
+  font-size: 1.02rem;
+}
+
+.status-pill {
+  min-width: 86px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #e7f2ed;
+  color: var(--green);
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.canvas-wrap {
+  flex: 1;
+  min-height: 360px;
+  padding: 0 18px;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+}
+
+.canvas-wrap canvas {
+  height: 100%;
+  min-height: 430px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--line);
+}
+
+button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #b9c4bd;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+button:first-child {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.side-panel {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.side-panel section {
+  padding: 18px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric {
+  min-height: 78px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfcf9;
+}
+
+.metric span,
+label span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.32rem;
+}
+
+.controls {
+  display: grid;
+  gap: 16px;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+}
+
+output {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--green);
+}
+
+.learning-band {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr 1.1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.learning-band article {
+  padding: 20px;
+  box-shadow: none;
+}
+
+.learning-band p,
+.learning-band li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.learning-band ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.learning-band canvas {
+  height: 160px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfcf9;
+}
+
+@media (max-width: 980px) {
+  .lab,
+  .learning-band {
+    grid-template-columns: 1fr;
+  }
+
+  .lab {
+    min-height: auto;
+  }
+
+  .side-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .side-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .sim-header,
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .canvas-wrap canvas {
+    min-height: 360px;
+  }
+}

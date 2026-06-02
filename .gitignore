@@ -1,0 +1,4 @@
+node_modules/
+dist/
+.azure-cli/
+.DS_Store

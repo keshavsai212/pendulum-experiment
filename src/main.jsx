@@ -8,14 +8,14 @@ const defaults = {
   gravity: 9.81,
   startAngle: 18,
   damping: 0.02,
-  pendulumCount: 1,
+  bobCount: 1,
 };
 
 const physicsStep = 1 / 120;
 const maxFrameTime = 0.08;
 const readoutInterval = 100;
 const sampleInterval = 1 / 30;
-const pendulumColors = ["#42e8ff", "#ff4fd8", "#28f0a4", "#ffe36e", "#8b6cff", "#ff8a4f"];
+const bobColors = ["#42e8ff", "#ff4fd8", "#28f0a4", "#ffe36e", "#8b6cff", "#ff8a4f"];
 
 function degreesToRadians(value) {
   return (value * Math.PI) / 180;
@@ -45,17 +45,6 @@ function insightFor(config, period) {
   return "Mass changes the energy in the bob, but it does not change the ideal period. Length and gravity are the main controls for swing timing.";
 }
 
-function makePendulums(config) {
-  const count = Math.max(1, Math.min(6, config.pendulumCount));
-  const center = (count - 1) / 2;
-
-  return Array.from({ length: count }, (_, index) => ({
-    theta: degreesToRadians(config.startAngle + (index - center) * 4),
-    omega: 0,
-    color: pendulumColors[index % pendulumColors.length],
-  }));
-}
-
 function prepareCanvas(canvas) {
   const rect = canvas.getBoundingClientRect();
   const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -74,10 +63,15 @@ function prepareCanvas(canvas) {
   return { ctx, width, height };
 }
 
-function drawPendulum(ctx, width, height, pendulums, config) {
+function drawPendulum(ctx, width, height, theta, config) {
   const pivot = { x: width / 2, y: 84 };
   const pixelLength = Math.min(height * 0.68, 170 + config.length * 145);
-  const bobRadius = Math.max(17, 22 + config.mass * 4 - Math.max(0, pendulums.length - 1) * 2);
+  const bobCount = Math.max(1, Math.min(6, config.bobCount));
+  const bobRadius = Math.max(15, 22 + config.mass * 4 - Math.max(0, bobCount - 1) * 2);
+  const stringEnd = {
+    x: pivot.x + Math.sin(theta) * pixelLength,
+    y: pivot.y + Math.cos(theta) * pixelLength,
+  };
 
   ctx.clearRect(0, 0, width, height);
 
@@ -107,25 +101,15 @@ function drawPendulum(ctx, width, height, pendulums, config) {
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  pendulums.forEach((pendulum, index) => {
-    const bob = {
-      x: pivot.x + Math.sin(pendulum.theta) * pixelLength,
-      y: pivot.y + Math.cos(pendulum.theta) * pixelLength,
-    };
-    const lineWidth = Math.max(2, 5 - index * 0.35);
-
-    ctx.strokeStyle = pendulum.color;
-    ctx.globalAlpha = 0.92;
-    ctx.lineWidth = lineWidth;
-    ctx.shadowColor = pendulum.color;
-    ctx.shadowBlur = 16;
-    ctx.beginPath();
-    ctx.moveTo(pivot.x, pivot.y);
-    ctx.lineTo(bob.x, bob.y);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1;
-  });
+  ctx.strokeStyle = "#dffcff";
+  ctx.lineWidth = 5;
+  ctx.shadowColor = "rgba(66, 232, 255, 0.5)";
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.moveTo(pivot.x, pivot.y);
+  ctx.lineTo(stringEnd.x, stringEnd.y);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
 
   ctx.fillStyle = "#28f0a4";
   ctx.shadowColor = "rgba(40, 240, 164, 0.8)";
@@ -135,17 +119,19 @@ function drawPendulum(ctx, width, height, pendulums, config) {
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  pendulums.forEach((pendulum) => {
+  Array.from({ length: bobCount }, (_, index) => {
+    const spacing = (index + 1) / bobCount;
+    const color = bobColors[index % bobColors.length];
     const bob = {
-      x: pivot.x + Math.sin(pendulum.theta) * pixelLength,
-      y: pivot.y + Math.cos(pendulum.theta) * pixelLength,
+      x: pivot.x + Math.sin(theta) * pixelLength * spacing,
+      y: pivot.y + Math.cos(theta) * pixelLength * spacing,
     };
     const bobGradient = ctx.createRadialGradient(bob.x - bobRadius / 3, bob.y - bobRadius / 3, 4, bob.x, bob.y, bobRadius);
     bobGradient.addColorStop(0, "#ffffff");
-    bobGradient.addColorStop(0.22, pendulum.color);
+    bobGradient.addColorStop(0.22, color);
     bobGradient.addColorStop(1, "#12081a");
     ctx.fillStyle = bobGradient;
-    ctx.shadowColor = pendulum.color;
+    ctx.shadowColor = color;
     ctx.shadowBlur = 28;
     ctx.beginPath();
     ctx.arc(bob.x, bob.y, bobRadius, 0, Math.PI * 2);
@@ -162,7 +148,7 @@ function drawPendulum(ctx, width, height, pendulums, config) {
   ctx.shadowColor = "rgba(66, 232, 255, 0.45)";
   ctx.shadowBlur = 10;
   ctx.font = "700 18px system-ui";
-  ctx.fillText(`${Math.abs(radiansToDegrees(pendulums[0].theta)).toFixed(1)}°`, pivot.x + 18, pivot.y + 26);
+  ctx.fillText(`${Math.abs(radiansToDegrees(theta)).toFixed(1)}°`, pivot.x + 18, pivot.y + 26);
   ctx.shadowBlur = 0;
 }
 
@@ -208,7 +194,8 @@ function App() {
   const graphCanvas = useRef(null);
   const configRef = useRef(defaults);
   const stateRef = useRef({
-    pendulums: makePendulums(defaults),
+    theta: degreesToRadians(defaults.startAngle),
+    omega: 0,
     running: true,
     lastTime: performance.now(),
     accumulator: 0,
@@ -229,7 +216,8 @@ function App() {
   const insight = insightFor(config, period);
 
   function resetSimulation(nextConfig = configRef.current) {
-    stateRef.current.pendulums = makePendulums(nextConfig);
+    stateRef.current.theta = degreesToRadians(nextConfig.startAngle);
+    stateRef.current.omega = 0;
     stateRef.current.accumulator = 0;
     stateRef.current.sampleTimer = 0;
     stateRef.current.samples = [];
@@ -241,7 +229,7 @@ function App() {
     configRef.current = nextConfig;
     setConfig(nextConfig);
 
-    if (key === "startAngle" || key === "length" || key === "gravity" || key === "pendulumCount") {
+    if (key === "startAngle" || key === "length" || key === "gravity" || key === "bobCount") {
       resetSimulation(nextConfig);
     }
   }
@@ -260,15 +248,13 @@ function App() {
     let animationFrame = 0;
 
     function integrate(current, activeConfig) {
-      current.pendulums.forEach((pendulum) => {
-        const acceleration = -(activeConfig.gravity / activeConfig.length) * Math.sin(pendulum.theta) - activeConfig.damping * pendulum.omega;
-        pendulum.omega += acceleration * physicsStep;
-        pendulum.theta += pendulum.omega * physicsStep;
-      });
+      const acceleration = -(activeConfig.gravity / activeConfig.length) * Math.sin(current.theta) - activeConfig.damping * current.omega;
+      current.omega += acceleration * physicsStep;
+      current.theta += current.omega * physicsStep;
       current.sampleTimer += physicsStep;
 
       if (current.sampleTimer >= sampleInterval) {
-        current.samples.push(radiansToDegrees(current.pendulums[0].theta));
+        current.samples.push(radiansToDegrees(current.theta));
         current.sampleTimer = 0;
 
         if (current.samples.length > 160) {
@@ -292,22 +278,21 @@ function App() {
         }
       }
 
-      const primary = current.pendulums[0];
-      const height = activeConfig.length * (1 - Math.cos(primary.theta));
+      const height = activeConfig.length * (1 - Math.cos(current.theta));
       const potential = activeConfig.mass * activeConfig.gravity * height;
-      const kinetic = 0.5 * activeConfig.mass * Math.pow(activeConfig.length * primary.omega, 2);
+      const kinetic = 0.5 * activeConfig.mass * Math.pow(activeConfig.length * current.omega, 2);
 
       if (pendulumCanvas.current && graphCanvas.current) {
         const pendulum = prepareCanvas(pendulumCanvas.current);
         const graph = prepareCanvas(graphCanvas.current);
-        drawPendulum(pendulum.ctx, pendulum.width, pendulum.height, current.pendulums, activeConfig);
+        drawPendulum(pendulum.ctx, pendulum.width, pendulum.height, current.theta, activeConfig);
         drawGraph(graph.ctx, graph.width, graph.height, current.samples);
       }
 
       if (now - current.lastReadoutTime >= readoutInterval) {
         current.lastReadoutTime = now;
         setReadings({
-          angle: radiansToDegrees(primary.theta),
+          angle: radiansToDegrees(current.theta),
           energy: potential + kinetic,
         });
       }
@@ -371,7 +356,7 @@ function App() {
             <Slider label="Gravity" value={config.gravity} output={`${config.gravity.toFixed(2)} m/s²`} min="1.62" max="24.79" step="0.01" onChange={(value) => updateConfig("gravity", value)} />
             <Slider label="Starting Angle" value={config.startAngle} output={`${config.startAngle.toFixed(0)}°`} min="3" max="65" step="1" onChange={(value) => updateConfig("startAngle", value)} />
             <Slider label="Damping" value={config.damping} output={config.damping.toFixed(3)} min="0" max="0.12" step="0.005" onChange={(value) => updateConfig("damping", value)} />
-            <Slider label="Pendulums" value={config.pendulumCount} output={`${config.pendulumCount}`} min="1" max="6" step="1" onChange={(value) => updateConfig("pendulumCount", value)} />
+            <Slider label="Bobs on String" value={config.bobCount} output={`${config.bobCount}`} min="1" max="6" step="1" onChange={(value) => updateConfig("bobCount", value)} />
           </section>
         </aside>
       </section>

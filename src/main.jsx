@@ -73,12 +73,13 @@ function drawPendulum(ctx, width, height, theta, config) {
   ctx.clearRect(0, 0, width, height);
 
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#f9fbf7");
-  gradient.addColorStop(1, "#edf4ef");
+  gradient.addColorStop(0, "#07111c");
+  gradient.addColorStop(0.58, "#091a29");
+  gradient.addColorStop(1, "#12081a");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.strokeStyle = "#d8ded8";
+  ctx.strokeStyle = "rgba(66, 232, 255, 0.08)";
   ctx.lineWidth = 1;
   for (let angle = -60; angle <= 60; angle += 15) {
     const rad = degreesToRadians(angle);
@@ -88,45 +89,64 @@ function drawPendulum(ctx, width, height, theta, config) {
     ctx.stroke();
   }
 
-  ctx.strokeStyle = "#2b6f9f";
+  ctx.strokeStyle = "rgba(66, 232, 255, 0.78)";
   ctx.lineWidth = 3;
+  ctx.shadowColor = "rgba(66, 232, 255, 0.55)";
+  ctx.shadowBlur = 14;
   ctx.beginPath();
   ctx.arc(pivot.x, pivot.y, pixelLength, Math.PI / 2 - degreesToRadians(65), Math.PI / 2 + degreesToRadians(65));
   ctx.stroke();
+  ctx.shadowBlur = 0;
 
-  ctx.strokeStyle = "#26352f";
+  ctx.strokeStyle = "#dffcff";
   ctx.lineWidth = 5;
+  ctx.shadowColor = "rgba(66, 232, 255, 0.5)";
+  ctx.shadowBlur = 18;
   ctx.beginPath();
   ctx.moveTo(pivot.x, pivot.y);
   ctx.lineTo(bob.x, bob.y);
   ctx.stroke();
+  ctx.shadowBlur = 0;
 
-  ctx.fillStyle = "#16201c";
+  ctx.fillStyle = "#28f0a4";
+  ctx.shadowColor = "rgba(40, 240, 164, 0.8)";
+  ctx.shadowBlur = 18;
   ctx.beginPath();
   ctx.arc(pivot.x, pivot.y, 10, 0, Math.PI * 2);
   ctx.fill();
+  ctx.shadowBlur = 0;
 
-  ctx.fillStyle = "#b24535";
+  const bobGradient = ctx.createRadialGradient(bob.x - bobRadius / 3, bob.y - bobRadius / 3, 4, bob.x, bob.y, bobRadius);
+  bobGradient.addColorStop(0, "#ffffff");
+  bobGradient.addColorStop(0.22, "#42e8ff");
+  bobGradient.addColorStop(1, "#ff4fd8");
+  ctx.fillStyle = bobGradient;
+  ctx.shadowColor = "rgba(255, 79, 216, 0.75)";
+  ctx.shadowBlur = 28;
   ctx.beginPath();
   ctx.arc(bob.x, bob.y, bobRadius, 0, Math.PI * 2);
   ctx.fill();
+  ctx.shadowBlur = 0;
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
   ctx.beginPath();
   ctx.arc(bob.x - bobRadius / 3, bob.y - bobRadius / 3, bobRadius / 3, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = "#16201c";
+  ctx.fillStyle = "#ecfeff";
+  ctx.shadowColor = "rgba(66, 232, 255, 0.45)";
+  ctx.shadowBlur = 10;
   ctx.font = "700 18px system-ui";
   ctx.fillText(`${Math.abs(radiansToDegrees(theta)).toFixed(1)}°`, pivot.x + 18, pivot.y + 26);
+  ctx.shadowBlur = 0;
 }
 
 function drawGraph(ctx, width, height, samples) {
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#fbfcf9";
+  ctx.fillStyle = "rgba(4, 12, 20, 0.94)";
   ctx.fillRect(0, 0, width, height);
 
-  ctx.strokeStyle = "#d9dfda";
+  ctx.strokeStyle = "rgba(66, 232, 255, 0.12)";
   ctx.lineWidth = 1;
   for (let i = 1; i < 4; i += 1) {
     const y = (height / 4) * i;
@@ -136,8 +156,10 @@ function drawGraph(ctx, width, height, samples) {
     ctx.stroke();
   }
 
-  ctx.strokeStyle = "#1d6b52";
+  ctx.strokeStyle = "#28f0a4";
   ctx.lineWidth = 3;
+  ctx.shadowColor = "rgba(40, 240, 164, 0.55)";
+  ctx.shadowBlur = 10;
   ctx.beginPath();
   samples.forEach((sample, index) => {
     const x = (index / 159) * width;
@@ -149,8 +171,9 @@ function drawGraph(ctx, width, height, samples) {
     }
   });
   ctx.stroke();
+  ctx.shadowBlur = 0;
 
-  ctx.fillStyle = "#5c6862";
+  ctx.fillStyle = "#91a8b6";
   ctx.font = "700 14px system-ui";
   ctx.fillText("angle over time", 14, 24);
 }

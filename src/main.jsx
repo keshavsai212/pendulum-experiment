@@ -10,6 +10,11 @@ const defaults = {
   damping: 0.02,
 };
 
+const physicsStep = 1 / 120;
+const maxFrameTime = 0.08;
+const readoutInterval = 100;
+const sampleInterval = 1 / 30;
+
 function degreesToRadians(value) {
   return (value * Math.PI) / 180;
 }
@@ -38,9 +43,25 @@ function insightFor(config, period) {
   return "Mass changes the energy in the bob, but it does not change the ideal period. Length and gravity are the main controls for swing timing.";
 }
 
-function drawPendulum(ctx, canvas, theta, config) {
-  const width = canvas.width;
-  const height = canvas.height;
+function prepareCanvas(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  const width = Math.max(1, rect.width);
+  const height = Math.max(1, rect.height);
+  const nextWidth = Math.round(width * pixelRatio);
+  const nextHeight = Math.round(height * pixelRatio);
+
+  if (canvas.width !== nextWidth || canvas.height !== nextHeight) {
+    canvas.width = nextWidth;
+    canvas.height = nextHeight;
+  }
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  return { ctx, width, height };
+}
+
+function drawPendulum(ctx, width, height, theta, config) {
   const pivot = { x: width / 2, y: 84 };
   const pixelLength = Math.min(height * 0.68, 170 + config.length * 145);
   const bob = {
@@ -100,10 +121,7 @@ function drawPendulum(ctx, canvas, theta, config) {
   ctx.fillText(`${Math.abs(radiansToDegrees(theta)).toFixed(1)}°`, pivot.x + 18, pivot.y + 26);
 }
 
-function drawGraph(ctx, canvas, samples) {
-  const width = canvas.width;
-  const height = canvas.height;
-
+function drawGraph(ctx, width, height, samples) {
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#fbfcf9";
   ctx.fillRect(0, 0, width, height);
@@ -146,6 +164,9 @@ function App() {
     omega: 0,
     running: true,
     lastTime: performance.now(),
+    accumulator: 0,
+    sampleTimer: 0,
+    lastReadoutTime: 0,
     samples: [],
   });
 
@@ -163,6 +184,8 @@ function App() {
   function resetSimulation(nextConfig = configRef.current) {
     stateRef.current.theta = degreesToRadians(nextConfig.startAngle);
     stateRef.current.omega = 0;
+    stateRef.current.accumulator = 0;
+    stateRef.current.sampleTimer = 0;
     stateRef.current.samples = [];
     stateRef.current.lastTime = performance.now();
   }
@@ -190,36 +213,55 @@ function App() {
   useEffect(() => {
     let animationFrame = 0;
 
+    function integrate(current, activeConfig) {
+      const acceleration = -(activeConfig.gravity / activeConfig.length) * Math.sin(current.theta) - activeConfig.damping * current.omega;
+      current.omega += acceleration * physicsStep;
+      current.theta += current.omega * physicsStep;
+      current.sampleTimer += physicsStep;
+
+      if (current.sampleTimer >= sampleInterval) {
+        current.samples.push(radiansToDegrees(current.theta));
+        current.sampleTimer = 0;
+
+        if (current.samples.length > 160) {
+          current.samples.shift();
+        }
+      }
+    }
+
     function animate(now) {
       const current = stateRef.current;
       const activeConfig = configRef.current;
-      const dt = Math.min((now - current.lastTime) / 1000, 0.032);
+      const dt = Math.min((now - current.lastTime) / 1000, maxFrameTime);
       current.lastTime = now;
 
       if (current.running) {
-        const acceleration = -(activeConfig.gravity / activeConfig.length) * Math.sin(current.theta) - activeConfig.damping * current.omega;
-        current.omega += acceleration * dt;
-        current.theta += current.omega * dt;
+        current.accumulator += dt;
+
+        while (current.accumulator >= physicsStep) {
+          integrate(current, activeConfig);
+          current.accumulator -= physicsStep;
+        }
       }
 
       const height = activeConfig.length * (1 - Math.cos(current.theta));
       const potential = activeConfig.mass * activeConfig.gravity * height;
       const kinetic = 0.5 * activeConfig.mass * Math.pow(activeConfig.length * current.omega, 2);
-      current.samples.push(radiansToDegrees(current.theta));
-
-      if (current.samples.length > 160) {
-        current.samples.shift();
-      }
 
       if (pendulumCanvas.current && graphCanvas.current) {
-        drawPendulum(pendulumCanvas.current.getContext("2d"), pendulumCanvas.current, current.theta, activeConfig);
-        drawGraph(graphCanvas.current.getContext("2d"), graphCanvas.current, current.samples);
+        const pendulum = prepareCanvas(pendulumCanvas.current);
+        const graph = prepareCanvas(graphCanvas.current);
+        drawPendulum(pendulum.ctx, pendulum.width, pendulum.height, current.theta, activeConfig);
+        drawGraph(graph.ctx, graph.width, graph.height, current.samples);
       }
 
-      setReadings({
-        angle: radiansToDegrees(current.theta),
-        energy: potential + kinetic,
-      });
+      if (now - current.lastReadoutTime >= readoutInterval) {
+        current.lastReadoutTime = now;
+        setReadings({
+          angle: radiansToDegrees(current.theta),
+          energy: potential + kinetic,
+        });
+      }
 
       animationFrame = requestAnimationFrame(animate);
     }

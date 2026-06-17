@@ -205,6 +205,7 @@ function App() {
   });
 
   const [config, setConfig] = useState(defaults);
+  const [activeTab, setActiveTab] = useState("simulation");
   const [readings, setReadings] = useState({
     angle: defaults.startAngle,
     energy: 0,
@@ -317,69 +318,184 @@ function App() {
 
   return (
     <main className="app-shell">
-      <section className="lab">
-        <div className="sim-panel">
-          <div className="sim-header">
-            <div>
-              <p className="eyebrow">Virtual Physics Lab</p>
-              <h1>Pendulum Lab</h1>
+      <nav className="tab-bar" aria-label="Pendulum lab sections">
+        <button type="button" className={activeTab === "simulation" ? "active" : ""} onClick={() => setActiveTab("simulation")}>Simulation</button>
+        <button type="button" className={activeTab === "explanation" ? "active" : ""} onClick={() => setActiveTab("explanation")}>Explanation</button>
+      </nav>
+
+      {activeTab === "simulation" ? (
+        <>
+          <section className="lab">
+            <div className="sim-panel">
+              <div className="sim-header">
+                <div>
+                  <p className="eyebrow">Virtual Physics Lab</p>
+                  <h1>Pendulum Lab</h1>
+                </div>
+                <div className="status-pill">{running ? "Running" : "Paused"}</div>
+              </div>
+
+              <div className="canvas-wrap">
+                <canvas ref={pendulumCanvas} width="900" height="640" aria-label="Animated pendulum simulation" />
+              </div>
+
+              <div className="toolbar" aria-label="Simulation controls">
+                <button type="button" onClick={toggleRunning}>{running ? "Pause" : "Play"}</button>
+                <button type="button" onClick={resetAndRun}>Reset</button>
+                <button type="button" onClick={release}>Release</button>
+              </div>
             </div>
-            <div className="status-pill">{running ? "Running" : "Paused"}</div>
-          </div>
 
-          <div className="canvas-wrap">
-            <canvas ref={pendulumCanvas} width="900" height="640" aria-label="Animated pendulum simulation" />
-          </div>
+            <aside className="side-panel">
+              <section className="readouts" aria-label="Live experiment readings">
+                <h2>Live Readings</h2>
+                <div className="metric-grid">
+                  <Metric label="Period" value={`${period.toFixed(2)} s`} />
+                  <Metric label="Frequency" value={`${frequency.toFixed(2)} Hz`} />
+                  <Metric label="Angle" value={`${readings.angle.toFixed(1)}°`} />
+                  <Metric label="Energy" value={`${readings.energy.toFixed(2)} J`} />
+                </div>
+              </section>
 
-          <div className="toolbar" aria-label="Simulation controls">
-            <button type="button" onClick={toggleRunning}>{running ? "Pause" : "Play"}</button>
-            <button type="button" onClick={resetAndRun}>Reset</button>
-            <button type="button" onClick={release}>Release</button>
-          </div>
-        </div>
-
-        <aside className="side-panel">
-          <section className="readouts" aria-label="Live experiment readings">
-            <h2>Live Readings</h2>
-            <div className="metric-grid">
-              <Metric label="Period" value={`${period.toFixed(2)} s`} />
-              <Metric label="Frequency" value={`${frequency.toFixed(2)} Hz`} />
-              <Metric label="Angle" value={`${readings.angle.toFixed(1)}°`} />
-              <Metric label="Energy" value={`${readings.energy.toFixed(2)} J`} />
-            </div>
+              <section className="controls" aria-label="Pendulum settings">
+                <h2>Experiment Controls</h2>
+                <Slider label="Length" value={config.length} output={`${config.length.toFixed(2)} m`} min="0.25" max="2.5" step="0.05" onChange={(value) => updateConfig("length", value)} />
+                <Slider label="Mass" value={config.mass} output={`${config.mass.toFixed(1)} kg`} min="0.2" max="5" step="0.1" onChange={(value) => updateConfig("mass", value)} />
+                <Slider label="Gravity" value={config.gravity} output={`${config.gravity.toFixed(2)} m/s²`} min="1.62" max="24.79" step="0.01" onChange={(value) => updateConfig("gravity", value)} />
+                <Slider label="Starting Angle" value={config.startAngle} output={`${config.startAngle.toFixed(0)}°`} min="3" max="65" step="1" onChange={(value) => updateConfig("startAngle", value)} />
+                <Slider label="Damping" value={config.damping} output={config.damping.toFixed(3)} min="0" max="0.12" step="0.005" onChange={(value) => updateConfig("damping", value)} />
+                <Slider label="Bobs on String" value={config.bobCount} output={`${config.bobCount}`} min="1" max="6" step="1" onChange={(value) => updateConfig("bobCount", value)} />
+              </section>
+            </aside>
           </section>
 
-          <section className="controls" aria-label="Pendulum settings">
-            <h2>Experiment Controls</h2>
-            <Slider label="Length" value={config.length} output={`${config.length.toFixed(2)} m`} min="0.25" max="2.5" step="0.05" onChange={(value) => updateConfig("length", value)} />
-            <Slider label="Mass" value={config.mass} output={`${config.mass.toFixed(1)} kg`} min="0.2" max="5" step="0.1" onChange={(value) => updateConfig("mass", value)} />
-            <Slider label="Gravity" value={config.gravity} output={`${config.gravity.toFixed(2)} m/s²`} min="1.62" max="24.79" step="0.01" onChange={(value) => updateConfig("gravity", value)} />
-            <Slider label="Starting Angle" value={config.startAngle} output={`${config.startAngle.toFixed(0)}°`} min="3" max="65" step="1" onChange={(value) => updateConfig("startAngle", value)} />
-            <Slider label="Damping" value={config.damping} output={config.damping.toFixed(3)} min="0" max="0.12" step="0.005" onChange={(value) => updateConfig("damping", value)} />
-            <Slider label="Bobs on String" value={config.bobCount} output={`${config.bobCount}`} min="1" max="6" step="1" onChange={(value) => updateConfig("bobCount", value)} />
+          <section className="learning-band">
+            <article>
+              <h2>What The Simulator Shows</h2>
+              <p>{insight}</p>
+            </article>
+            <article>
+              <h2>Guided Experiment</h2>
+              <ol>
+                <li>Choose a length and press Reset.</li>
+                <li>Time ten complete swings.</li>
+                <li>Divide by ten and compare with <strong>T = 2π√(L/g)</strong>.</li>
+              </ol>
+            </article>
+            <article>
+              <h2>Motion Graph</h2>
+              <canvas ref={graphCanvas} width="520" height="220" aria-label="Angle over time graph" />
+            </article>
           </section>
-        </aside>
-      </section>
-
-      <section className="learning-band">
-        <article>
-          <h2>What The Simulator Shows</h2>
-          <p>{insight}</p>
-        </article>
-        <article>
-          <h2>Guided Experiment</h2>
-          <ol>
-            <li>Choose a length and press Reset.</li>
-            <li>Time ten complete swings.</li>
-            <li>Divide by ten and compare with <strong>T = 2π√(L/g)</strong>.</li>
-          </ol>
-        </article>
-        <article>
-          <h2>Motion Graph</h2>
-          <canvas ref={graphCanvas} width="520" height="220" aria-label="Angle over time graph" />
-        </article>
-      </section>
+        </>
+      ) : (
+        <ExplanationTab />
+      )}
     </main>
+  );
+}
+
+function ExplanationTab() {
+  return (
+    <section className="explanation-panel">
+      <div className="explanation-hero">
+        <p className="eyebrow">Concept Guide</p>
+        <h1>How A Pendulum Works</h1>
+        <p>
+          A pendulum is a weight that swings back and forth from a fixed point.
+          Its repeating motion makes it one of the simplest ways to study gravity,
+          energy, timing, and periodic motion.
+        </p>
+      </div>
+
+      <div className="explanation-grid">
+        <article className="wide-card">
+          <h2>What Is A Pendulum?</h2>
+          <p>
+            A simple pendulum has a fixed pivot, a light string or rod, and a bob
+            at the end. When the bob is pulled to one side and released, gravity
+            pulls it downward. Because the bob is constrained by the string, it
+            follows a curved path instead of falling straight down.
+          </p>
+        </article>
+
+        <article>
+          <h2>Main Parts</h2>
+          <ul>
+            <li><strong>Pivot:</strong> the fixed point the pendulum swings from.</li>
+            <li><strong>String or rod:</strong> the connector that sets the pendulum length.</li>
+            <li><strong>Bob:</strong> the mass at the end that moves along the arc.</li>
+            <li><strong>Length:</strong> the distance from pivot to the bob's center.</li>
+            <li><strong>Angle:</strong> how far the bob is pulled away from vertical.</li>
+            <li><strong>Gravity:</strong> the force that pulls the bob back downward.</li>
+          </ul>
+        </article>
+
+        <article>
+          <h2>The Swing Cycle</h2>
+          <p>
+            At the highest point, the bob has maximum potential energy. As it
+            falls, that energy becomes kinetic energy, so the bob moves fastest
+            at the bottom. Momentum carries it upward on the other side, where
+            kinetic energy turns back into potential energy.
+          </p>
+        </article>
+
+        <article className="formula-card">
+          <h2>Period Formula</h2>
+          <p className="formula">T = 2π√(L/g)</p>
+          <p>
+            <strong>T</strong> is the time for one complete swing, <strong>L</strong>
+            {" "}is the pendulum length, and <strong>g</strong> is gravitational
+            acceleration. A longer pendulum has a larger period, so it swings more
+            slowly. Stronger gravity makes the period smaller.
+          </p>
+        </article>
+
+        <article>
+          <h2>Key Motion Terms</h2>
+          <p>
+            The <strong>period</strong> is the time for one full back-and-forth
+            swing. <strong>Frequency</strong> is how many swings happen each
+            second. <strong>Amplitude</strong> is the largest angle reached during
+            the swing. <strong>Damping</strong> is energy loss from air resistance
+            and friction, which gradually makes the swing smaller.
+          </p>
+        </article>
+
+        <article>
+          <h2>Why Mass Barely Matters</h2>
+          <p>
+            In an ideal pendulum, changing the bob's mass does not change the
+            period. A heavier bob has more inertia, but gravity also pulls on it
+            with a proportionally larger force. Those effects cancel, leaving
+            length and gravity as the main timing controls.
+          </p>
+        </article>
+
+        <article>
+          <h2>Small Angles</h2>
+          <p>
+            The formula works best when the starting angle is small, usually
+            below about 15 degrees. At larger angles, the arc is wider and the
+            restoring force is less perfectly proportional to displacement, so
+            the real period becomes slightly longer than the simple formula
+            predicts.
+          </p>
+        </article>
+
+        <article className="wide-card">
+          <h2>What Pendulums Are Useful For</h2>
+          <ul className="use-list">
+            <li><strong>Clocks:</strong> regular swings can keep time.</li>
+            <li><strong>Seismometers:</strong> suspended masses help detect ground motion.</li>
+            <li><strong>Metronomes:</strong> adjustable pendulums mark musical tempo.</li>
+            <li><strong>Measurement:</strong> period can be used to estimate local gravity.</li>
+            <li><strong>Education:</strong> pendulums make energy, forces, and periodic motion visible.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
   );
 }
 

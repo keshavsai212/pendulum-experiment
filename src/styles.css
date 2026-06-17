@@ -84,6 +84,38 @@ input {
   padding: 24px;
 }
 
+.tab-bar {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(4, 12, 20, 0.72);
+  box-shadow: inset 0 0 28px rgba(66, 232, 255, 0.06);
+}
+
+.tab-bar button {
+  min-width: 124px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tab-bar button:first-child {
+  background: transparent;
+  border-color: rgba(66, 232, 255, 0.32);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.tab-bar button.active,
+.tab-bar button.active:first-child {
+  background: linear-gradient(135deg, #17d894, #18bed4);
+  border-color: var(--green);
+  color: #041017;
+  box-shadow: 0 0 26px rgba(40, 240, 164, 0.24);
+}
+
 .lab {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
@@ -309,10 +341,100 @@ input[type="range"] {
   box-shadow: inset 0 0 24px rgba(66, 232, 255, 0.08);
 }
 
+.explanation-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.explanation-hero,
+.explanation-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.explanation-hero {
+  padding: 30px;
+  background:
+    linear-gradient(135deg, rgba(40, 240, 164, 0.16), transparent 36%),
+    linear-gradient(180deg, rgba(12, 31, 49, 0.95), rgba(7, 16, 26, 0.92)),
+    var(--panel-strong);
+}
+
+.explanation-hero p:last-child {
+  max-width: 780px;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.65;
+}
+
+.explanation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.explanation-grid article {
+  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(66, 232, 255, 0.07), transparent 58%),
+    var(--panel);
+  box-shadow: none;
+}
+
+.explanation-grid .wide-card {
+  grid-column: span 2;
+}
+
+.explanation-grid p,
+.explanation-grid li {
+  color: var(--muted);
+  line-height: 1.62;
+}
+
+.explanation-grid ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.formula-card {
+  border-color: rgba(40, 240, 164, 0.35);
+  background:
+    linear-gradient(180deg, rgba(40, 240, 164, 0.1), transparent 58%),
+    var(--panel);
+}
+
+.formula {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(40, 240, 164, 0.32);
+  border-radius: 6px;
+  background: rgba(4, 12, 20, 0.72);
+  color: #ffffff;
+  font-size: 1.42rem;
+  font-weight: 900;
+  box-shadow: inset 0 0 22px rgba(40, 240, 164, 0.08), 0 0 22px rgba(40, 240, 164, 0.08);
+}
+
+.use-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 @media (max-width: 980px) {
   .lab,
-  .learning-band {
+  .learning-band,
+  .explanation-grid {
     grid-template-columns: 1fr;
+  }
+
+  .explanation-grid .wide-card {
+    grid-column: auto;
   }
 
   .lab {
@@ -327,6 +449,17 @@ input[type="range"] {
 @media (max-width: 680px) {
   .app-shell {
     padding: 12px;
+  }
+
+  .tab-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .tab-bar button {
+    min-width: 0;
+    padding: 0 10px;
   }
 
   .side-panel {
@@ -344,5 +477,13 @@ input[type="range"] {
 
   .canvas-wrap canvas {
     min-height: 360px;
+  }
+
+  .explanation-hero {
+    padding: 22px;
+  }
+
+  .use-list {
+    grid-template-columns: 1fr;
   }
 }

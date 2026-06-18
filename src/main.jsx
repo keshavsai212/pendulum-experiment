@@ -25,6 +25,12 @@ function radiansToDegrees(value) {
   return (value * 180) / Math.PI;
 }
 
+function formatElapsedTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toFixed(1).padStart(4, "0")}`;
+}
+
 function insightFor(config, period) {
   if (config.damping > 0.07) {
     return "High damping removes energy quickly, so the bob settles down in fewer swings. Real pendulums lose energy to air resistance and friction at the pivot.";
@@ -200,6 +206,7 @@ function App() {
     lastTime: performance.now(),
     accumulator: 0,
     sampleTimer: 0,
+    elapsedTime: 0,
     lastReadoutTime: 0,
     samples: [],
   });
@@ -210,6 +217,7 @@ function App() {
     angle: defaults.startAngle,
     energy: 0,
   });
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [running, setRunning] = useState(true);
 
   const period = useMemo(() => 2 * Math.PI * Math.sqrt(config.length / config.gravity), [config.length, config.gravity]);
@@ -221,8 +229,10 @@ function App() {
     stateRef.current.omega = 0;
     stateRef.current.accumulator = 0;
     stateRef.current.sampleTimer = 0;
+    stateRef.current.elapsedTime = 0;
     stateRef.current.samples = [];
     stateRef.current.lastTime = performance.now();
+    setElapsedTime(0);
   }
 
   function updateConfig(key, value) {
@@ -272,6 +282,7 @@ function App() {
 
       if (current.running) {
         current.accumulator += dt;
+        current.elapsedTime += dt;
 
         while (current.accumulator >= physicsStep) {
           integrate(current, activeConfig);
@@ -296,6 +307,7 @@ function App() {
           angle: radiansToDegrees(current.theta),
           energy: potential + kinetic,
         });
+        setElapsedTime(current.elapsedTime);
       }
 
       animationFrame = requestAnimationFrame(animate);
@@ -337,6 +349,14 @@ function App() {
 
               <div className="canvas-wrap">
                 <canvas ref={pendulumCanvas} width="900" height="640" aria-label="Animated pendulum simulation" />
+              </div>
+
+              <div className="timer-panel" aria-label="Experiment timer">
+                <div>
+                  <h2>Experiment Timer</h2>
+                  <p>Time 10 swings</p>
+                </div>
+                <strong>{formatElapsedTime(elapsedTime)}</strong>
               </div>
 
               <div className="toolbar" aria-label="Simulation controls">

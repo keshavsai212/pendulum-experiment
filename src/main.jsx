@@ -69,7 +69,7 @@ function prepareCanvas(canvas) {
   return { ctx, width, height };
 }
 
-function drawPendulum(ctx, width, height, theta, config) {
+function drawPendulum(ctx, width, height, theta, config, samples, elapsedTime) {
   const pivot = { x: width / 2, y: 84 };
   const pixelLength = Math.min(height * 0.68, 170 + config.length * 145);
   const bobCount = Math.max(1, Math.min(6, config.bobCount));
@@ -87,6 +87,22 @@ function drawPendulum(ctx, width, height, theta, config) {
   gradient.addColorStop(1, "#12081a");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = "rgba(66, 232, 255, 0.06)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= width; x += 42) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y <= height; y += 42) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
 
   ctx.strokeStyle = "rgba(66, 232, 255, 0.08)";
   ctx.lineWidth = 1;
@@ -115,6 +131,24 @@ function drawPendulum(ctx, width, height, theta, config) {
   ctx.moveTo(pivot.x, pivot.y);
   ctx.lineTo(stringEnd.x, stringEnd.y);
   ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  const trailAngles = samples.slice(-34);
+  trailAngles.forEach((sample, index) => {
+    const alpha = (index + 1) / trailAngles.length;
+    const trailTheta = degreesToRadians(sample);
+    const trailBob = {
+      x: pivot.x + Math.sin(trailTheta) * pixelLength,
+      y: pivot.y + Math.cos(trailTheta) * pixelLength,
+    };
+
+    ctx.fillStyle = `rgba(66, 232, 255, ${0.04 + alpha * 0.2})`;
+    ctx.shadowColor = "rgba(66, 232, 255, 0.35)";
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(trailBob.x, trailBob.y, 2 + alpha * 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
   ctx.shadowBlur = 0;
 
   ctx.fillStyle = "#28f0a4";
@@ -160,7 +194,11 @@ function drawPendulum(ctx, width, height, theta, config) {
 
 function drawGraph(ctx, width, height, samples) {
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(4, 12, 20, 0.94)";
+  const graphGradient = ctx.createLinearGradient(0, 0, width, height);
+  graphGradient.addColorStop(0, "rgba(3, 16, 25, 0.98)");
+  graphGradient.addColorStop(0.5, "rgba(4, 12, 20, 0.94)");
+  graphGradient.addColorStop(1, "rgba(14, 7, 28, 0.96)");
+  ctx.fillStyle = graphGradient;
   ctx.fillRect(0, 0, width, height);
 
   ctx.strokeStyle = "rgba(66, 232, 255, 0.12)";
@@ -173,10 +211,19 @@ function drawGraph(ctx, width, height, samples) {
     ctx.stroke();
   }
 
+  ctx.strokeStyle = "rgba(255, 79, 216, 0.12)";
+  for (let i = 1; i < 8; i += 1) {
+    const x = (width / 8) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+
   ctx.strokeStyle = "#28f0a4";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 4;
   ctx.shadowColor = "rgba(40, 240, 164, 0.55)";
-  ctx.shadowBlur = 10;
+  ctx.shadowBlur = 16;
   ctx.beginPath();
   samples.forEach((sample, index) => {
     const x = (index / 159) * width;
@@ -190,9 +237,25 @@ function drawGraph(ctx, width, height, samples) {
   ctx.stroke();
   ctx.shadowBlur = 0;
 
+  ctx.fillStyle = "#42e8ff";
+  ctx.shadowColor = "rgba(66, 232, 255, 0.9)";
+  ctx.shadowBlur = 12;
+  samples.forEach((sample, index) => {
+    if (index % 18 !== 0 && index !== samples.length - 1) {
+      return;
+    }
+
+    const x = (index / 159) * width;
+    const y = height / 2 - (sample / 70) * (height / 2 - 18);
+    ctx.beginPath();
+    ctx.arc(x, y, index === samples.length - 1 ? 4 : 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.shadowBlur = 0;
+
   ctx.fillStyle = "#91a8b6";
   ctx.font = "700 14px system-ui";
-  ctx.fillText("angle over time", 14, 24);
+  ctx.fillText("angle telemetry", 14, 24);
 }
 
 function App() {
@@ -297,7 +360,7 @@ function App() {
       if (pendulumCanvas.current && graphCanvas.current) {
         const pendulum = prepareCanvas(pendulumCanvas.current);
         const graph = prepareCanvas(graphCanvas.current);
-        drawPendulum(pendulum.ctx, pendulum.width, pendulum.height, current.theta, activeConfig);
+        drawPendulum(pendulum.ctx, pendulum.width, pendulum.height, current.theta, activeConfig, current.samples, current.elapsedTime);
         drawGraph(graph.ctx, graph.width, graph.height, current.samples);
       }
 

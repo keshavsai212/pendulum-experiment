@@ -291,13 +291,48 @@ button:first-child {
 }
 
 .metric {
+  position: relative;
+  overflow: hidden;
   min-height: 78px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background:
-    linear-gradient(180deg, rgba(66, 232, 255, 0.08), transparent),
+    linear-gradient(135deg, rgba(66, 232, 255, 0.15), transparent 48%),
+    linear-gradient(180deg, rgba(255, 79, 216, 0.08), transparent 70%),
     rgba(4, 12, 20, 0.66);
+  box-shadow: inset 0 0 24px rgba(66, 232, 255, 0.08), 0 0 18px rgba(66, 232, 255, 0.05);
+}
+
+.metric::before {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--green);
+  box-shadow: 0 0 12px rgba(40, 240, 164, 0.8);
+  content: "";
+}
+
+.metric::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(66, 232, 255, 0.7), transparent);
+  content: "";
+  animation: telemetrySweep 2.8s linear infinite;
+}
+
+@keyframes telemetrySweep {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
 }
 
 .metric span,
@@ -316,7 +351,8 @@ label span {
   margin-top: 8px;
   font-size: 1.32rem;
   color: #ffffff;
-  text-shadow: 0 0 18px rgba(66, 232, 255, 0.2);
+  text-shadow: 0 0 18px rgba(66, 232, 255, 0.34), 0 0 20px rgba(40, 240, 164, 0.16);
+  transition: color 160ms ease, text-shadow 160ms ease;
 }
 
 .controls {
@@ -369,8 +405,8 @@ input[type="range"] {
   height: 160px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: rgba(4, 12, 20, 0.8);
-  box-shadow: inset 0 0 24px rgba(66, 232, 255, 0.08);
+  background: rgba(4, 12, 20, 0.88);
+  box-shadow: inset 0 0 24px rgba(66, 232, 255, 0.14), 0 0 20px rgba(40, 240, 164, 0.05);
 }
 
 .explanation-panel {
